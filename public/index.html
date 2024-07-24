@@ -99,10 +99,51 @@
       .chat-input input[type="file"] {
         display: none;
       }
+      .user-limit-container,
+      .name-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-bottom: 20px;
+      }
+      .user-limit-container input[type="number"],
+      .name-container input[type="text"] {
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .user-limit-container button,
+      .name-container button {
+        padding: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      .user-limit-container button:hover,
+      .name-container button:hover {
+        background-color: #0056b3;
+      }
     </style>
   </head>
   <body>
-    <div class="chat-container">
+    <div class="user-limit-container">
+      <input
+        id="user-limit"
+        type="number"
+        placeholder="Enter user limit"
+        min="2"
+      />
+      <button id="set-user-limit">Set User Limit</button>
+    </div>
+    <div class="name-container" style="display: none">
+      <input id="user-name" type="text" placeholder="Enter your name" />
+      <button id="set-user-name">Join Chat</button>
+    </div>
+    <div class="chat-container" style="display: none">
       <div class="chat-header">Chat Application</div>
       <div class="chat-messages">
         <ul id="messages"></ul>
@@ -124,17 +165,45 @@
     <script>
       const socket = io();
 
+      const userLimitInput = document.getElementById("user-limit");
+      const setUserLimitButton = document.getElementById("set-user-limit");
+      const nameContainer = document.querySelector(".name-container");
+      const userNameInput = document.getElementById("user-name");
+      const setUserNameButton = document.getElementById("set-user-name");
+      const chatContainer = document.querySelector(".chat-container");
       const form = document.getElementById("form");
       const input = document.getElementById("input");
       const fileInput = document.getElementById("file-input");
       const messages = document.getElementById("messages");
 
+      let userName = "";
+
+      setUserLimitButton.addEventListener("click", () => {
+        const limit = parseInt(userLimitInput.value);
+        if (limit && limit > 1) {
+          socket.emit("set user limit", limit);
+        }
+      });
+
+      setUserNameButton.addEventListener("click", () => {
+        userName = userNameInput.value;
+        if (userName) {
+          socket.emit("join chat", userName);
+          nameContainer.style.display = "none";
+          chatContainer.style.display = "flex";
+        }
+      });
+
       form.addEventListener("submit", function (e) {
         e.preventDefault();
         if (input.value) {
           const message = input.value;
-          addMessage(message, "sender");
-          socket.emit("chat message", { type: "text", data: message });
+          addMessage(userName, message, "sender");
+          socket.emit("chat message", {
+            name: userName,
+            type: "text",
+            data: message,
+          });
           input.value = "";
         }
       });
@@ -144,39 +213,54 @@
         if (file) {
           const reader = new FileReader();
           reader.onload = function (e) {
-            const imgData = e.target.result;
-            addMessage(imgData, "sender", true);
-            socket.emit("chat message", { type: "image", data: imgData });
+            const image = e.target.result;
+            addMessage(userName, image, "sender", true);
+            socket.emit("chat message", {
+              name: userName,
+              type: "image",
+              data: image,
+            });
           };
           reader.readAsDataURL(file);
-          fileInput.value = ""; // Clear the file input
+          fileInput.value = "";
         }
       });
 
-      socket.on("chat message", function (msg) {
-        addMessage(msg.data, "receiver", msg.type === "image");
+      socket.on("request user limit", () => {
+        document.querySelector(".user-limit-container").style.display = "flex";
       });
 
-      socket.on("user connected", function (data) {
+      socket.on("user limit set", (limit) => {
+        document.querySelector(".user-limit-container").style.display = "none";
+        nameContainer.style.display = "flex";
+      });
+
+      socket.on("user connected", (data) => {
+        addSystemMessage(data.msg);
+      });
+
+      socket.on("user disconnected", (data) => {
+        addSystemMessage(data.msg);
+      });
+
+      socket.on("chat message", (msg) => {
+        addMessage(msg.name, msg.data, "receiver", msg.type === "image");
+      });
+
+      function addSystemMessage(msg) {
         const item = document.createElement("li");
-        item.textContent = data.msg;
-        item.style.color = "green";
-        item.style.textAlign = "center";
+        item.textContent = msg;
+        item.classList.add("system");
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
-      });
+      }
 
-      socket.on("user disconnected", function (data) {
+      function addMessage(name, msg, type, isImage = false) {
         const item = document.createElement("li");
-        item.textContent = data.msg;
-        item.style.color = "red";
-        item.style.textAlign = "center";
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
-      });
+        const nameTag = document.createElement("strong");
+        nameTag.textContent = name + ": ";
+        item.appendChild(nameTag);
 
-      function addMessage(msg, type, isImage = false) {
-        const item = document.createElement("li");
         if (isImage) {
           const img = document.createElement("img");
           img.src = msg;
@@ -184,8 +268,9 @@
           img.style.borderRadius = "10px";
           item.appendChild(img);
         } else {
-          item.textContent = msg;
+          item.appendChild(document.createTextNode(msg));
         }
+
         item.classList.add(type);
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
