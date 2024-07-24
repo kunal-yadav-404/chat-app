@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chat Application</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -75,16 +79,25 @@
         outline: none;
       }
       .chat-input button,
-      .chat-input input[type="file"] {
+      .chat-input label {
         padding: 15px;
         background-color: #007bff;
         color: #fff;
         border: none;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .chat-input button:hover,
-      .chat-input input[type="file"]:hover {
+      .chat-input label:hover {
         background-color: #0056b3;
+      }
+      .chat-input label {
+        cursor: pointer;
+      }
+      .chat-input input[type="file"] {
+        display: none;
       }
     </style>
   </head>
@@ -101,8 +114,9 @@
           autocomplete="off"
           placeholder="Type a message..."
         />
+        <label for="file-input"><i class="fas fa-paperclip"></i></label>
         <input id="file-input" type="file" accept="image/*" />
-        <button type="submit">Send</button>
+        <button type="submit"><i class="fas fa-paper-plane"></i></button>
       </form>
     </div>
 
