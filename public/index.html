@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Application</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f2f5;
+      }
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        width: 400px;
+        height: 600px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      .chat-header {
+        padding: 10px;
+        background-color: #007bff;
+        color: #fff;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+      }
+      .chat-messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .chat-messages ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .chat-messages li {
+        padding: 10px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        max-width: 70%;
+        word-wrap: break-word;
+      }
+      .sender {
+        background-color: #d1e7dd;
+        align-self: flex-end;
+        text-align: right;
+      }
+      .receiver {
+        background-color: #f8d7da;
+        align-self: flex-start;
+      }
+      .chat-input {
+        display: flex;
+        border-top: 1px solid #ccc;
+      }
+      .chat-input input {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 0;
+        outline: none;
+      }
+      .chat-input button {
+        padding: 15px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+      .chat-input button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">Chat Application</div>
+      <div class="chat-messages">
+        <ul id="messages"></ul>
+      </div>
+      <form id="form" class="chat-input" action="">
+        <input id="input" autocomplete="off" placeholder="Type a message..." />
+        <button>Send</button>
+      </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      const form = document.getElementById("form");
+      const input = document.getElementById("input");
+      const messages = document.getElementById("messages");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (input.value) {
+          const message = input.value;
+          addMessage(message, "sender");
+          socket.emit("chat message", message);
+          input.value = "";
+        }
+      });
+
+      socket.on("chat message", function (msg) {
+        addMessage(msg, "receiver");
+      });
+
+      socket.on("user connected", function (data) {
+        const item = document.createElement("li");
+        item.textContent = data.msg;
+        item.style.color = "green";
+        item.style.textAlign = "center";
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
+      });
+
+      socket.on("user disconnected", function (data) {
+        const item = document.createElement("li");
+        item.textContent = data.msg;
+        item.style.color = "red";
+        item.style.textAlign = "center";
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
+      });
+
+      function addMessage(msg, type) {
+        const item = document.createElement("li");
+        item.textContent = msg;
+        item.classList.add(type);
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
+      }
+    </script>
+  </body>
+</html>
