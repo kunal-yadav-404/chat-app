@@ -67,21 +67,23 @@
         display: flex;
         border-top: 1px solid #ccc;
       }
-      .chat-input input {
+      .chat-input input[type="text"] {
         flex: 1;
         padding: 15px;
         border: none;
         border-radius: 0;
         outline: none;
       }
-      .chat-input button {
+      .chat-input button,
+      .chat-input input[type="file"] {
         padding: 15px;
         background-color: #007bff;
         color: #fff;
         border: none;
         cursor: pointer;
       }
-      .chat-input button:hover {
+      .chat-input button:hover,
+      .chat-input input[type="file"]:hover {
         background-color: #0056b3;
       }
     </style>
@@ -93,8 +95,14 @@
         <ul id="messages"></ul>
       </div>
       <form id="form" class="chat-input" action="">
-        <input id="input" autocomplete="off" placeholder="Type a message..." />
-        <button>Send</button>
+        <input
+          id="input"
+          type="text"
+          autocomplete="off"
+          placeholder="Type a message..."
+        />
+        <input id="file-input" type="file" accept="image/*" />
+        <button type="submit">Send</button>
       </form>
     </div>
 
@@ -104,6 +112,7 @@
 
       const form = document.getElementById("form");
       const input = document.getElementById("input");
+      const fileInput = document.getElementById("file-input");
       const messages = document.getElementById("messages");
 
       form.addEventListener("submit", function (e) {
@@ -111,13 +120,27 @@
         if (input.value) {
           const message = input.value;
           addMessage(message, "sender");
-          socket.emit("chat message", message);
+          socket.emit("chat message", { type: "text", data: message });
           input.value = "";
         }
       });
 
+      fileInput.addEventListener("change", function () {
+        const file = fileInput.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const imgData = e.target.result;
+            addMessage(imgData, "sender", true);
+            socket.emit("chat message", { type: "image", data: imgData });
+          };
+          reader.readAsDataURL(file);
+          fileInput.value = ""; // Clear the file input
+        }
+      });
+
       socket.on("chat message", function (msg) {
-        addMessage(msg, "receiver");
+        addMessage(msg.data, "receiver", msg.type === "image");
       });
 
       socket.on("user connected", function (data) {
@@ -138,9 +161,17 @@
         messages.scrollTop = messages.scrollHeight;
       });
 
-      function addMessage(msg, type) {
+      function addMessage(msg, type, isImage = false) {
         const item = document.createElement("li");
-        item.textContent = msg;
+        if (isImage) {
+          const img = document.createElement("img");
+          img.src = msg;
+          img.style.maxWidth = "100%";
+          img.style.borderRadius = "10px";
+          item.appendChild(img);
+        } else {
+          item.textContent = msg;
+        }
         item.classList.add(type);
         messages.appendChild(item);
         messages.scrollTop = messages.scrollHeight;
