@@ -2,6 +2,13 @@
 
 This is a simple real-time chat application built with HTML, CSS, and JavaScript using Socket.io. It supports sending text messages and images between users, with a basic user interface to differentiate between messages from different users.
 
+##Snapshots
+![image](https://github.com/user-attachments/assets/dc8d7354-f89a-48e4-999c-3e0fb05c49fd)
+
+![image](https://github.com/user-attachments/assets/049062e5-5deb-4518-b565-259353d5765c)
+
+
+
 ## Features
 
 - **User Identification**: Users enter their names before joining the chat.
